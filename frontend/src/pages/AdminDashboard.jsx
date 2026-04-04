@@ -10,60 +10,29 @@ export default function AdminDashboard({ token, onLogout }) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [incidents, setIncidents] = useState([
-    {
-      id: 1,
-      title: 'Flash Flood - Dharavi',
-      type: 'flood',
-      severity: 'critical',
-      status: 'active',
-      reporter_name: 'Ravi Kumar',
-      location_name: 'Dharavi',
-      latitude: 19.0176,
-      longitude: 72.8194,
-      created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-      description: 'Severe waterlogging affecting main roads. Water level rising. Emergency drainage teams deployed.'
-    },
-    {
-      id: 2,
-      title: 'Waterlogging - Kurla Station',
-      type: 'flood',
-      severity: 'warning',
-      status: 'acknowledged',
-      reporter_name: 'Anonymous',
-      location_name: 'Kurla',
-      latitude: 19.0752,
-      longitude: 72.8653,
-      created_at: new Date(Date.now() - 38 * 60000).toISOString(),
-      description: 'Water pooling near railway station. Traffic being diverted. Drainage pumps in operation.'
-    },
-    {
-      id: 3,
-      title: 'Power Outage - Bandra West',
-      type: 'infrastructure',
-      severity: 'warning',
-      status: 'active',
-      reporter_name: 'Priya S',
-      location_name: 'Bandra West',
-      latitude: 19.0176,
-      longitude: 72.8297,
-      created_at: new Date(Date.now() - 30 * 60000).toISOString(),
-      description: 'Multiple residential buildings without electricity. Backup generators deployed. BEST power teams working on repair.'
-    },
-    {
-      id: 4,
-      title: 'Heatwave Alert - Govandi',
-      type: 'heatwave',
-      severity: 'critical',
-      status: 'active',
-      reporter_name: 'Anonymous',
-      location_name: 'Govandi',
-      latitude: 19.0235,
-      longitude: 72.8974,
-      created_at: new Date(Date.now() - 1 * 60000).toISOString(),
-      description: 'Extreme heat conditions. Temperature crossing 42 degrees Celsius. Vulnerable population warned. Medical units on standby.'
-    }
-  ]);
+  const [incidents, setIncidents] = useState([]);
+
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/v1/incidents')
+      .then(r => r.json())
+      .then(data => {
+        if (data.incidents) setIncidents(data.incidents);
+      })
+      .catch(e => console.error(e));
+
+    // SSE Real-Time Updates Setup
+    const source = new EventSource('http://localhost:8000/api/v1/events/stream');
+    source.onmessage = (event) => {
+      const { event: eventType, data } = JSON.parse(event.data);
+      if (eventType === 'incident_created') {
+        setIncidents(prev => [data, ...prev]);
+      } else if (eventType === 'incident_updated' || eventType === 'incident_resolved') {
+        setIncidents(prev => prev.map(i => i.id === data.id ? data : i));
+      }
+    };
+    return () => source.close();
+  }, []);
 
   const [stats, setStats] = useState({
     total_active: 0,

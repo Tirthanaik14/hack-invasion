@@ -36,7 +36,7 @@ export default function Alerts() {
   useEffect(() => {
     fetch(`${API_BASE_URL}/incidents`)
       .then(r => r.json())
-      .then(setIncidents)
+      .then(data => setIncidents(data.incidents))
       .catch(e => console.error(e))
 
     // Real-time listener

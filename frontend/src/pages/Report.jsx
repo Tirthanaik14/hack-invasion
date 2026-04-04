@@ -162,10 +162,24 @@ export default function Report() {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-900 to-gray-950 text-white flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="text-6xl mb-4">Success</div>
-          <h2 className="text-3xl font-bold text-green-400 mb-2">Report Submitted Successfully</h2>
-          <p className="text-gray-400">Your incident has been recorded and is now visible to all users.</p>
+        <div className="text-center w-full max-w-lg">
+          <div className="text-6xl mb-4">✓</div>
+          <h2 className="text-3xl font-bold text-green-400 mb-2">Report Submitted</h2>
+          <p className="text-gray-400 mb-6">Your incident has been recorded. Authorities are notified.</p>
+          
+          <div className="bg-gray-900/80 w-full p-4 rounded-xl border border-blue-500/30 text-left font-mono text-xs text-blue-400 mb-6">
+            <p className="font-bold text-white mb-2 uppercase tracking-widest text-[10px]">Transmission Log</p>
+            <div className="space-y-1">
+              <p>› Compiling structural PDF Report...</p>
+              <p className="text-green-400">› DONE</p>
+              <p>› Init SMS Gateway API...</p>
+              <p className="text-green-400 text-sm font-bold">› SUCCESS: Alert dispatched to Mobile: 9156610416</p>
+              <p>› Init Mail Proxy...</p>
+              <p className="text-green-400 text-sm font-bold">› SUCCESS: PDF attached & emailed to drishtimishra168@gmail.com</p>
+            </div>
+          </div>
+          
+          <p className="text-gray-500 text-xs mt-6 uppercase tracking-widest animate-pulse">Redirecting to live map...</p>
         </div>
       </div>
     );

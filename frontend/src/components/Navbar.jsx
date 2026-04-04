@@ -8,6 +8,7 @@ export default function Navbar() {
     { label: 'Map', path: '/home' },
     { label: 'Report', path: '/report' },
     { label: 'Alerts', path: '/alerts' },
+    { label: 'Admin (C2)', path: '/admin/login' },
   ]
 
   return (
@@ -34,10 +35,11 @@ export default function Navbar() {
         ))}
       </div>
       <div className="ml-auto flex items-center gap-3">
-        <span className="bg-red-500/20 text-red-400 text-xs px-2.5 py-1 rounded-full font-medium">
-          3 active
+        <span className="flex items-center gap-1.5 bg-green-500/10 text-green-400 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-widest">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          SYSTEM LIVE
         </span>
-        <span className="text-gray-500 text-sm">Mumbai</span>
+        <span className="text-gray-500 text-sm">Mumbai Operations Grid</span>
       </div>
     </nav>
   )

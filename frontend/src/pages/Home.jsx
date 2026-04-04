@@ -20,8 +20,8 @@ export default function Home() {
     fetch(`${API_BASE_URL}/incidents`)
       .then(res => res.json())
       .then(data => {
-        setIncidents(data)
-        updateStats(data)
+        setIncidents(data.incidents)
+        updateStats(data.incidents)
         setTimeout(() => setIsLoading(false), 800) // Small delay for effect
       })
       .catch(err => {
