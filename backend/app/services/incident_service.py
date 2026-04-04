@@ -14,6 +14,13 @@ from app.services.sse_service import sse_service
 class IncidentService:
 
     async def create_incident(self, db: Session, payload: IncidentCreate) -> Incident:
+        # AI Auto-Assessment Simulation
+        critical_keywords = ["explosion", "blood", "trapped", "dead", "casualty", "collapse", "severe", "bomb", "injured"]
+        text_to_analyze = f"{payload.title} {payload.description}".lower()
+        
+        if any(kw in text_to_analyze for kw in critical_keywords):
+            payload.severity = SeverityLevel.CRITICAL
+
         # Check for nearby duplicate
         duplicate = geo_service.find_nearby_duplicate(
             db=db,
