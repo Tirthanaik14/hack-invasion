@@ -13,6 +13,7 @@ export default function Home() {
   const [showEmergency, setShowEmergency] = useState(false)
   const [emergencyNodes, setEmergencyNodes] = useState([])
   const [stats, setStats] = useState({ critical: 0, active: 0, total_today: 0, resolved: 0 })
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Initial fetch
@@ -21,8 +22,12 @@ export default function Home() {
       .then(data => {
         setIncidents(data)
         updateStats(data)
+        setTimeout(() => setIsLoading(false), 800) // Small delay for effect
       })
-      .catch(err => console.error(err))
+      .catch(err => {
+        console.error(err)
+        setIsLoading(false)
+      })
 
     // SSE Real-Time Updates Setup
     const source = new EventSource(`${API_BASE_URL}/events/stream`)
@@ -60,7 +65,7 @@ export default function Home() {
   }
 
   // Logic to detect multiple incidents in one area
-  const isHighVelocity = (loc) => incidents.filter(i => i.location_name === loc).length >= 1
+  const isHighVelocity = (loc) => incidents.filter(i => i.location_name === loc).length >= 2
 
   useEffect(() => {
     if (showEmergency && emergencyNodes.length === 0) {
@@ -89,7 +94,13 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {isLoading && (
+          <div className="absolute inset-0 z-[2000] bg-gray-950/80 backdrop-blur-sm flex flex-col items-center justify-center">
+            <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4" />
+            <p className="text-blue-400 font-bold text-xs tracking-[0.2em] uppercase animate-pulse">Syncing Map Grid...</p>
+          </div>
+        )}
         <div className="relative flex-1">
           <MapContainer center={[19.0760, 72.8777]} zoom={12} zoomControl={false} style={{ height: '100%', width: '100%' }}>
             <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
