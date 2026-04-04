@@ -4,19 +4,30 @@ import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import { timeAgo, severityColor } from '../utils/timeAgo'
 
-const MOCK_INCIDENTS = [
-  { id: 1, title: 'Flash flood — Dharavi', type: 'flood', severity: 'critical', status: 'active', latitude: 19.0436, longitude: 72.8527, location_name: 'Dharavi, Mumbai', reporter_name: 'Ravi Kumar', description: 'Severe flash flooding reported near Dharavi main road. Water level rising rapidly. Residents advised to move to higher ground immediately.', created_at: new Date(Date.now() - 2 * 60000).toISOString() },
-  { id: 2, title: 'Waterlogging — Kurla Station', type: 'flood', severity: 'warning', status: 'active', latitude: 19.0711, longitude: 72.8794, location_name: 'Kurla, Mumbai', reporter_name: 'Anonymous', description: 'Waterlogging near Kurla station exit. Train services partially affected. Road traffic heavily congested.', created_at: new Date(Date.now() - 14 * 60000).toISOString() },
-  { id: 3, title: 'Power outage — Bandra West', type: 'infrastructure', severity: 'warning', status: 'acknowledged', latitude: 19.0596, longitude: 72.8295, location_name: 'Bandra West, Mumbai', reporter_name: 'Priya S', description: 'Power outage affecting multiple residential buildings on Hill Road. BEST engineers on site.', created_at: new Date(Date.now() - 31 * 60000).toISOString() },
-  { id: 4, title: 'Heatwave alert — Govandi', type: 'heatwave', severity: 'critical', status: 'active', latitude: 19.0490, longitude: 72.9280, location_name: 'Govandi, Mumbai', reporter_name: 'Anonymous', description: 'Extreme heat conditions in Govandi. Temperature crossing 42°C. Elderly and children advised to stay indoors.', created_at: new Date(Date.now() - 45 * 60000).toISOString() },
-  { id: 5, title: 'Andheri underpass — cleared', type: 'flood', severity: 'low', status: 'resolved', latitude: 19.1197, longitude: 72.8468, location_name: 'Andheri, Mumbai', reporter_name: 'Suresh M', description: 'Andheri underpass flooding has been cleared. Traffic flow restored.', resolved_at: new Date(Date.now() - 5 * 60000).toISOString(), created_at: new Date(Date.now() - 60 * 60000).toISOString() },
-]
+import { API_BASE_URL } from '../utils/config'
 
 export default function IncidentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const inc = MOCK_INCIDENTS.find(i => String(i.id) === String(id))
+  const [inc, setInc] = useState(null)
   const [secondsElapsed, setSecondsElapsed] = useState(0)
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/incidents/${id}`)
+      .then(res => res.json())
+      .then(data => setInc(data))
+      .catch(err => console.error(err))
+      
+    // Real-time listener for just this incident
+    const source = new EventSource(`${API_BASE_URL}/events/stream`)
+    source.onmessage = (event) => {
+      const { event: eventType, data } = JSON.parse(event.data)
+      if ((eventType === 'incident_updated' || eventType === 'incident_resolved') && String(data.id) === String(id)) {
+        setInc(data)
+      }
+    }
+    return () => source.close()
+  }, [id])
 
   useEffect(() => {
     if (!inc) return
