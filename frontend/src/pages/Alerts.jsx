@@ -4,13 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import { timeAgo, severityColor } from '../utils/timeAgo'
 
-const MOCK_INCIDENTS = [
-  { id: 1, title: 'Flash flood — Dharavi', type: 'flood', severity: 'critical', status: 'active', latitude: 19.0436, longitude: 72.8527, location_name: 'Dharavi, Mumbai', reporter_name: 'Ravi Kumar', created_at: new Date(Date.now() - 2 * 60000).toISOString() },
-  { id: 2, title: 'Waterlogging — Kurla Station', type: 'flood', severity: 'warning', status: 'active', latitude: 19.0711, longitude: 72.8794, location_name: 'Kurla, Mumbai', reporter_name: 'Anonymous', created_at: new Date(Date.now() - 14 * 60000).toISOString() },
-  { id: 3, title: 'Power outage — Bandra West', type: 'infrastructure', severity: 'warning', status: 'acknowledged', latitude: 19.0596, longitude: 72.8295, location_name: 'Bandra West, Mumbai', reporter_name: 'Priya S', created_at: new Date(Date.now() - 31 * 60000).toISOString() },
-  { id: 4, title: 'Heatwave alert — Govandi', type: 'heatwave', severity: 'critical', status: 'active', latitude: 19.0490, longitude: 72.9280, location_name: 'Govandi, Mumbai', reporter_name: 'Anonymous', created_at: new Date(Date.now() - 45 * 60000).toISOString() },
-  { id: 5, title: 'Andheri underpass — cleared', type: 'flood', severity: 'low', status: 'resolved', latitude: 19.1197, longitude: 72.8468, location_name: 'Andheri, Mumbai', reporter_name: 'Suresh M', created_at: new Date(Date.now() - 60 * 60000).toISOString() },
-]
+import { API_BASE_URL } from '../utils/config'
 
 function SeverityBadge({ severity, status }) {
   if (status === 'resolved') return <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-green-500/20 text-green-400">Resolved</span>
@@ -32,17 +26,31 @@ const SEVERITIES = ['All Severities', 'critical', 'warning', 'low']
 
 export default function Alerts() {
   const navigate = useNavigate()
-  const [incidents, setIncidents] = useState(MOCK_INCIDENTS)
+  const [incidents, setIncidents] = useState([])
   const [activeTab, setActiveTab] = useState('All Alerts')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('All Types')
   const [severityFilter, setSeverityFilter] = useState('All Severities')
   const userArea = JSON.parse(localStorage.getItem('userArea') || 'null')
 
-  // uncomment when backend is ready
-  // useEffect(() => {
-  //   fetch('/api/incidents').then(r => r.json()).then(setIncidents)
-  // }, [])
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/incidents`)
+      .then(r => r.json())
+      .then(setIncidents)
+      .catch(e => console.error(e))
+
+    // Real-time listener
+    const source = new EventSource(`${API_BASE_URL}/events/stream`)
+    source.onmessage = (event) => {
+      const { event: eventType, data } = JSON.parse(event.data)
+      if (eventType === 'incident_created') {
+        setIncidents(prev => [data, ...prev])
+      } else if (eventType === 'incident_updated' || eventType === 'incident_resolved') {
+        setIncidents(prev => prev.map(i => i.id === data.id ? data : i))
+      }
+    }
+    return () => source.close()
+  }, [])
 
   const filtered = incidents
     .filter(inc => {

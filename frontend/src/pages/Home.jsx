@@ -5,22 +5,59 @@ import { motion } from 'framer-motion'
 import 'leaflet/dist/leaflet.css'
 import Navbar from '../components/Navbar'
 import { timeAgo, severityColor } from '../utils/timeAgo'
-
-const MOCK_INCIDENTS = [
-  { id: 1, title: 'Flash flood — Dharavi', type: 'flood', severity: 'critical', status: 'active', latitude: 19.0436, longitude: 72.8527, location_name: 'Dharavi, Mumbai', reporter_name: 'Ravi Kumar', created_at: new Date(Date.now() - 2 * 60000).toISOString() },
-  { id: 2, title: 'Waterlogging — Kurla Station', type: 'flood', severity: 'warning', status: 'active', latitude: 19.0711, longitude: 72.8794, location_name: 'Kurla, Mumbai', reporter_name: 'Anonymous', created_at: new Date(Date.now() - 14 * 60000).toISOString() },
-  { id: 3, title: 'Power outage — Bandra West', type: 'infrastructure', severity: 'warning', status: 'acknowledged', latitude: 19.0596, longitude: 72.8295, location_name: 'Bandra West, Mumbai', reporter_name: 'Priya S', created_at: new Date(Date.now() - 31 * 60000).toISOString() },
-  { id: 4, title: 'Heatwave alert — Govandi', type: 'heatwave', severity: 'critical', status: 'active', latitude: 19.0490, longitude: 72.9280, location_name: 'Govandi, Mumbai', reporter_name: 'Anonymous', created_at: new Date(Date.now() - 45 * 60000).toISOString() },
-  { id: 5, title: 'Andheri underpass — cleared', type: 'flood', severity: 'low', status: 'resolved', latitude: 19.1197, longitude: 72.8468, location_name: 'Andheri, Mumbai', reporter_name: 'Suresh M', created_at: new Date(Date.now() - 60 * 60000).toISOString() },
-  { id: 6, title: 'Building Fire — Colaba', type: 'fire', severity: 'critical', status: 'active', latitude: 18.9067, longitude: 72.8147, location_name: 'Colaba, Mumbai', reporter_name: 'Security Head', created_at: new Date(Date.now() - 5 * 60000).toISOString() },
-]
+import { API_BASE_URL } from '../utils/config'
 
 export default function Home() {
   const navigate = useNavigate()
-  const [incidents] = useState(MOCK_INCIDENTS)
+  const [incidents, setIncidents] = useState([])
   const [showEmergency, setShowEmergency] = useState(false)
   const [emergencyNodes, setEmergencyNodes] = useState([])
-  const [stats] = useState({ critical: 3, active: 6, total_today: 8, resolved: 1 })
+  const [stats, setStats] = useState({ critical: 0, active: 0, total_today: 0, resolved: 0 })
+
+  useEffect(() => {
+    // Initial fetch
+    fetch(`${API_BASE_URL}/incidents`)
+      .then(res => res.json())
+      .then(data => {
+        setIncidents(data)
+        updateStats(data)
+      })
+      .catch(err => console.error(err))
+
+    // SSE Real-Time Updates Setup
+    const source = new EventSource(`${API_BASE_URL}/events/stream`)
+    source.onmessage = (event) => {
+      const { event: eventType, data } = JSON.parse(event.data)
+      
+      if (eventType === 'incident_created') {
+        setIncidents(prev => {
+          const newIncidents = [data, ...prev]
+          updateStats(newIncidents)
+          return newIncidents
+        })
+      } else if (eventType === 'incident_updated' || eventType === 'incident_resolved') {
+        setIncidents(prev => {
+          const newIncidents = prev.map(i => i.id === data.id ? data : i)
+          updateStats(newIncidents)
+          return newIncidents
+        })
+      }
+    }
+
+    return () => {
+      source.close()
+    }
+  }, [])
+
+  const updateStats = (data) => {
+    const today = new Date().toISOString().split('T')[0]
+    setStats({
+      critical: data.filter(i => i.severity === 'critical' && i.status !== 'resolved').length,
+      active: data.filter(i => i.status === 'active').length,
+      total_today: data.filter(i => i.created_at.startsWith(today)).length,
+      resolved: data.filter(i => i.status === 'resolved').length
+    })
+  }
 
   // Logic to detect multiple incidents in one area
   const isHighVelocity = (loc) => incidents.filter(i => i.location_name === loc).length >= 1
