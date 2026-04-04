@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapContainer, TileLayer, CircleMarker, Popup, LayerGroup, ZoomControl } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Circle, Popup, LayerGroup, ZoomControl } from 'react-leaflet'
 import { motion } from 'framer-motion'
 import 'leaflet/dist/leaflet.css'
 import Navbar from '../components/Navbar'
@@ -108,6 +108,15 @@ export default function Home() {
             
             {incidents.map(inc => (
               <LayerGroup key={inc.id}>
+                {/* Visual Area of Effect for Critical Incidents (approx 500m radius) */}
+                {inc.severity === 'critical' && inc.status !== 'resolved' && (
+                  <Circle 
+                    center={[inc.latitude, inc.longitude]} 
+                    radius={800} 
+                    pathOptions={{ color: '#ef4444', weight: 1, fillColor: '#ef4444', fillOpacity: 0.15 }}
+                  />
+                )}
+
                 {/* 1. RESTORED: Pulsing Velocity Ring */}
                 {isHighVelocity(inc.location_name) && inc.status !== 'resolved' && (
                   <CircleMarker 
