@@ -330,24 +330,31 @@ export default function Report() {
 
               <div ref={mapContainer} className="w-full h-64 rounded-lg mb-4 border border-blue-500/30"></div>
 
-              <form onSubmit={handleSearchArea} className="mb-4">
+              <div className="mb-4">
                 <label className="block text-xs font-semibold text-blue-300 mb-2 uppercase">Search Area (Required)</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearchArea(e);
+                      }
+                    }}
                     placeholder="Dharavi, Andheri..."
                     className="flex-1 bg-gray-800 border border-blue-500/30 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
                   />
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleSearchArea}
                     className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition font-medium"
                   >
                     Search
                   </button>
                 </div>
-              </form>
+              </div>
 
               <button
                 type="button"
