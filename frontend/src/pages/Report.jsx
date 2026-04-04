@@ -7,6 +7,8 @@ export default function Report() {
   const navigate = useNavigate();
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const videoRef = useRef(null);
+  const [cameraActive, setCameraActive] = useState(false);
   const [marker, setMarker] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -121,8 +123,39 @@ export default function Report() {
     const reader = new FileReader();
     reader.onload = (event) => {
       setPhotoPreview(event.target.result);
+      setCameraActive(false);
+      if (videoRef.current && videoRef.current.srcObject) {
+         videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      }
     };
     reader.readAsDataURL(file);
+  };
+
+  const startLiveCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      setCameraActive(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      setError('Live camera access denied or unsupported. Please upload a saved photo instead.');
+    }
+  };
+
+  const captureLivePhoto = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    setPhotoPreview(dataUrl);
+    setCameraActive(false);
+    
+    // Stop the video tracks
+    const stream = videoRef.current.srcObject;
+    if (stream) stream.getTracks().forEach(track => track.stop());
   };
 
   const isFormValid = () => {
@@ -187,8 +220,14 @@ export default function Report() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-900 to-gray-950 text-white">
-      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 py-12">
-        <div className="max-w-7xl mx-auto px-6">
+      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 py-10 relative">
+        <button 
+          onClick={() => navigate('/home')} 
+          className="absolute top-4 left-6 bg-gray-950/40 hover:bg-gray-950/60 p-2 rounded-full transition border border-white/20 text-white text-sm font-bold flex items-center gap-2 px-4 shadow-lg"
+        >
+          ← BACK TO MAP
+        </button>
+        <div className="max-w-7xl mx-auto px-6 mt-6">
           <h1 className="text-4xl font-bold mb-2">Report an Incident</h1>
           <p className="text-blue-100">Help your community by reporting disasters in real-time</p>
         </div>
@@ -306,20 +345,40 @@ export default function Report() {
                     Remove Photo
                   </button>
                 </div>
-              ) : (
-                <label className="flex items-center justify-center w-full px-6 py-12 border-2 border-dashed border-blue-500/30 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                  <div className="text-center">
-                    <div className="text-4xl mb-3">Camera</div>
-                    <p className="text-sm text-gray-400">Click to select photo</p>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
+              ) : cameraActive ? (
+                <div className="relative rounded-lg overflow-hidden border-2 border-blue-500/50">
+                  <video ref={videoRef} autoPlay playsInline className="w-full h-auto bg-black" />
+                  <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
+                    <button type="button" onClick={captureLivePhoto} className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-full shadow-xl">
+                      Capture Signal 📸
+                    </button>
+                    <button type="button" onClick={() => {
+                      setCameraActive(false);
+                      if (videoRef.current && videoRef.current.srcObject) {
+                        videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+                      }
+                    }} className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-full shadow-xl">
+                      Cancel
+                    </button>
                   </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                </label>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  <label className="flex items-center justify-center px-4 py-12 border-2 border-dashed border-blue-500/30 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-500/10 transition group">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">📁</div>
+                      <p className="text-[10px] text-gray-300 font-bold tracking-wide">UPLOAD SYSTEM</p>
+                    </div>
+                    <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+                  </label>
+                  
+                  <button type="button" onClick={startLiveCamera} className="w-full flex items-center justify-center px-4 py-12 border-2 border-solid border-blue-500/50 bg-blue-600/10 rounded-lg cursor-pointer hover:bg-blue-600/30 transition group">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">📸</div>
+                      <p className="text-[10px] text-blue-300 font-bold tracking-wide leading-tight">INITIATE LIVE<br/>CAMERA LINK</p>
+                    </div>
+                  </button>
+                </div>
               )}
             </div>
           </div>

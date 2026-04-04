@@ -104,12 +104,20 @@ export default function AdminDashboard({ token, onLogout }) {
               <p className="text-blue-300 text-sm">Real-time disaster monitoring and response coordination</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-6 py-2.5 bg-red-600/90 hover:bg-red-600 text-white rounded-lg font-semibold transition border border-red-500/30"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/home')}
+              className="px-6 py-2.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 rounded-lg font-semibold transition border border-blue-500/30"
+            >
+              Public Map
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-6 py-2.5 bg-red-600/90 hover:bg-red-600 text-white rounded-lg font-semibold transition border border-red-500/30"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
